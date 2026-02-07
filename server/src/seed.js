@@ -29,6 +29,14 @@ const seedDatabase = async () => {
         role: "user",
       },
       {
+        name: "Field Officer",
+        email: "employee@example.com",
+        passwordHash: hashedAdminPass,
+        role: "employee",
+        empId: "EMP-1001",
+        department: "Roads",
+      },
+      {
         name: "Admin Officer",
         email: "admin@example.com",
         passwordHash: hashedAdminPass,
@@ -42,14 +50,59 @@ const seedDatabase = async () => {
       },
     ];
 
-    await User.insertMany(users);
+    const inserted = await User.insertMany(users);
     console.log("✓ Added sample users:");
     console.log("  Users:");
     console.log("    - user@example.com / user123");
     console.log("    - jane@example.com / user123");
+    console.log("  Employee:");
+    console.log("    - employee@example.com / admin123");
     console.log("  Admins:");
     console.log("    - admin@example.com / admin123");
     console.log("    - superadmin@example.com / admin123");
+
+    // seed some complaints and assign to the employee user for demo
+    const Complaint = require("./models/Complaint");
+    await Complaint.deleteMany({});
+
+    const employee = inserted.find((u) => u.email === "employee@example.com");
+    const user = inserted.find((u) => u.email === "user@example.com");
+
+    if (employee && user) {
+      const complaints = [
+        {
+          title: "Pothole near Central Park",
+          description: "Large pothole causing traffic issues",
+          locationText: "Central Park Ave",
+          town: "Downtown",
+          category: "Roads",
+          status: "Assigned",
+          createdBy: user._id,
+          assignedTo: employee._id,
+          priority: "High",
+          dueDate: new Date(Date.now() + 2 * 24 * 3600 * 1000),
+          estimatedHours: 2,
+          targetLocation: { address: "Central Park Ave" },
+        },
+        {
+          title: "Streetlight flickering",
+          description: "Light on 3rd street flickers at night",
+          locationText: "3rd Street",
+          town: "Downtown",
+          category: "Lighting",
+          status: "Assigned",
+          createdBy: user._id,
+          assignedTo: employee._id,
+          priority: "Medium",
+          dueDate: new Date(Date.now() + 5 * 24 * 3600 * 1000),
+          estimatedHours: 1,
+          targetLocation: { address: "3rd Street" },
+        },
+      ];
+
+      await Complaint.insertMany(complaints);
+      console.log("✓ Seeded complaints assigned to employee");
+    }
 
     await mongoose.connection.close();
     console.log("✓ Database seeded successfully");
@@ -59,4 +112,9 @@ const seedDatabase = async () => {
   }
 };
 
-seedDatabase();
+module.exports = { seedDatabase };
+
+// If run directly, execute the seed
+if (require.main === module) {
+  seedDatabase();
+}

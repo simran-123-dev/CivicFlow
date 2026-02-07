@@ -1,5 +1,6 @@
 const express = require("express");
 const Complaint = require("../models/Complaint");
+const User = require("../models/User");
 const auth = require("../middleware/auth");
 const requireRole = require("../middleware/requireRole");
 
@@ -94,11 +95,30 @@ router.patch("/:id", auth, async (req, res) => {
       "coords",
       "category",
     ];
-    const allowedAdminFields = ["status", "remarks", "proofName"];
+    const allowedAdminFields = ["status", "remarks", "proofName", "assignedTo"];
 
     const updates = isAdmin
       ? { ...pick(req.body, allowedUserFields), ...pick(req.body, allowedAdminFields) }
       : pick(req.body, allowedUserFields);
+
+    // If admin provided an `assignedTo` that looks like an employee identifier (empId)
+    // convert it to the corresponding user's _id so the DB stores the ObjectId.
+    if (isAdmin && updates.assignedTo) {
+      const assigned = updates.assignedTo;
+      const isObjectIdLike = String(assigned).match(/^[0-9a-fA-F]{24}$/);
+
+      if (!isObjectIdLike) {
+        // Try finding by empId or by email as a fallback
+        const found = await User.findOne({ $or: [{ empId: assigned }, { email: assigned }] }).select("_id");
+        if (found) {
+          updates.assignedTo = found._id;
+        } else {
+          // If no matching user, leave assignedTo as-is (this will likely be ignored by consumer)
+          // but avoid storing non-objectid strings; remove the field instead.
+          delete updates.assignedTo;
+        }
+      }
+    }
 
     Object.assign(complaint, updates);
     await complaint.save();

@@ -17,7 +17,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-gradient-to-r from-[#0A2540] to-[#0F3D5E]">
+    <nav className="sticky top-0 z-50 bg-linear-to-r from-[#0A2540] to-[#0F3D5E]">
       <div className="w-full px-12 h-24 flex items-center justify-between">
 
         <span className="text-3xl md:text-4xl font-semibold text-white">
@@ -71,6 +71,25 @@ const Navbar = () => {
 
                 <NavLink
                   to="/admin/notifications"
+                  className="flex items-center px-6 py-2.5 text-gray-200 hover:text-white"
+                >
+                  <FaBell className="mr-2" />
+                  Notifications
+                </NavLink>
+              </>
+            )}
+            {role === "employee" && (
+              <>
+                <NavLink to="/employee/dashboard" className="px-6 py-2.5 text-gray-200 hover:text-white">
+                  Employee Dashboard
+                </NavLink>
+
+                <NavLink to="/employee/tasks" className="px-6 py-2.5 text-gray-200 hover:text-white">
+                  My Tasks
+                </NavLink>
+
+                <NavLink
+                  to="/employee/notifications"
                   className="flex items-center px-6 py-2.5 text-gray-200 hover:text-white"
                 >
                   <FaBell className="mr-2" />

@@ -17,6 +17,8 @@ const Login = () => {
     password: "",
     adminKey: "",
     town: "",
+    empId: "",
+    department: "",
   });
 
   const handleChange = (e) => {
@@ -37,7 +39,9 @@ const Login = () => {
           form.password,
           userType,
           form.adminKey,
-          form.town
+          form.town,
+          form.empId,
+          form.department
         );
       } else {
         response = await login(form.email, form.password);
@@ -46,8 +50,16 @@ const Login = () => {
       setToken(response.token);
       localStorage.setItem("role", response.user.role);
       localStorage.setItem("userId", response.user.id);
+      localStorage.setItem("userName", response.user.name);
+      localStorage.setItem("userEmail", response.user.email);
       if (response.user.town) {
         localStorage.setItem("town", response.user.town);
+      }
+      if (response.user.empId) {
+        localStorage.setItem("empId", response.user.empId);
+      }
+      if (response.user.department) {
+        localStorage.setItem("department", response.user.department);
       }
       navigate("/");
     } catch (err) {
@@ -75,7 +87,7 @@ const Login = () => {
             type="button"
             onClick={() => {
               setUserType("user");
-              setForm({ ...form, adminKey: "" });
+              setForm({ ...form, adminKey: "", empId: "", department: "" });
               setError("");
             }}
             className={`flex-1 py-2 rounded-lg font-medium transition ${
@@ -86,6 +98,22 @@ const Login = () => {
           >
             Citizen
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setUserType("employee");
+              setError("");
+            }}
+            className={`flex-1 py-2 rounded-lg font-medium transition ${
+              userType === "employee"
+                ? "bg-[#2EC4B6] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Employee
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -202,6 +230,39 @@ const Login = () => {
             </>
           )}
 
+          {isSignup && userType === "employee" && (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">
+                  Employee ID
+                </label>
+                <input
+                  type="text"
+                  name="empId"
+                  placeholder="EMP-1001"
+                  required
+                  onChange={handleChange}
+                  value={form.empId}
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none"
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-1">
+                  Department
+                </label>
+                <input
+                  type="text"
+                  name="department"
+                  placeholder="Roads"
+                  required
+                  onChange={handleChange}
+                  value={form.department}
+                  className="w-full border rounded-lg px-4 py-2 focus:outline-none"
+                />
+              </div>
+            </>
+          )}
+
           {error && (
             <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
               {error}
@@ -228,11 +289,21 @@ const Login = () => {
             onClick={() => {
               setIsSignup(!isSignup);
               setError("");
-              setForm({ name: "", email: "", password: "", adminKey: "", town: "" });
+              setForm({
+                name: "",
+                email: "",
+                password: "",
+                adminKey: "",
+                town: "",
+                empId: "",
+                department: "",
+              });
             }}
             className="text-[#2EC4B6] font-medium hover:underline"
           >
-            {isSignup ? "Already have an account? Login" : "Don't have an account? Sign up"}
+            {isSignup
+              ? "Already have an account? Login"
+              : "Don't have an account? Sign up"}
           </button>
         </div>
       </div>

@@ -15,12 +15,13 @@ const signToken = (user) => {
 
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, role, adminKey, town } = req.body;
+    const { name, email, password, role, adminKey, town, empId, department } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Missing fields" });
     }
 
+    // Admin signup protection
     if (role === "admin") {
       if (!adminKey || adminKey !== process.env.ADMIN_SIGNUP_KEY) {
         return res.status(403).json({ message: "Invalid admin key" });
@@ -36,23 +37,45 @@ router.post("/register", async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await User.create({
+
+    // ✅ Proper role handling
+    const allowedRoles = ["user", "admin", "employee"];
+    const finalRole = allowedRoles.includes(role) ? role : "user";
+
+    const userData = {
       name,
       email,
       passwordHash,
-      role: role === "admin" ? "admin" : "user",
-      town: role === "admin" ? town : "",
-    });
+      role: finalRole,
+      town: finalRole === "admin" ? town : "",
+    };
+
+    if (finalRole === "employee") {
+      userData.empId = empId || "";
+      userData.department = department || "";
+    }
+
+    const user = await User.create(userData);
 
     const token = signToken(user);
+
     return res.status(201).json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, town: user.town },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        town: user.town,
+        empId: user.empId || "",
+        department: user.department || "",
+      },
     });
   } catch (error) {
     return res.status(500).json({ message: "Server error" });
   }
 });
+
 
 router.post("/login", async (req, res) => {
   try {
@@ -74,7 +97,7 @@ router.post("/login", async (req, res) => {
     const token = signToken(user);
     return res.json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, town: user.town },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, town: user.town, empId: user.empId || "", department: user.department || "" },
     });
   } catch (error) {
     return res.status(500).json({ message: "Server error" });
