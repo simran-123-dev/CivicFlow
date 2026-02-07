@@ -14,16 +14,17 @@ const pick = (source, fields) => {
   }, {});
 };
 
+// GET ALL COMPLAINTS
 router.get("/", auth, async (req, res) => {
   try {
     let filter;
+
     if (req.user.role === "admin") {
-      // Admins see complaints from their assigned town only
       filter = { town: req.user.town };
     } else {
-      // Citizens see only their own complaints
-      filter = { createdBy: req.user.id };
+      filter = {}; // 🔥 Users can now see all complaints
     }
+
     const complaints = await Complaint.find(filter).sort({ createdAt: -1 });
     return res.json(complaints);
   } catch (error) {
@@ -31,23 +32,20 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+// GET SINGLE
 router.get("/:id", auth, async (req, res) => {
   try {
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) {
       return res.status(404).json({ message: "Not found" });
     }
-
-    if (req.user.role !== "admin" && String(complaint.createdBy) !== req.user.id) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
     return res.json(complaint);
   } catch (error) {
     return res.status(500).json({ message: "Server error" });
   }
 });
 
+// CREATE
 router.post("/", auth, async (req, res) => {
   try {
     const data = pick(req.body, [
@@ -74,6 +72,7 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
+// UPDATE
 router.patch("/:id", auth, async (req, res) => {
   try {
     const complaint = await Complaint.findById(req.params.id);
@@ -110,6 +109,48 @@ router.patch("/:id", auth, async (req, res) => {
   }
 });
 
+// 🔥 UPVOTE ROUTE
+router.put("/:id/upvote", auth, async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    if (complaint.upvotedBy.includes(req.user.id)) {
+      return res.status(400).json({ message: "Already upvoted" });
+    }
+
+    complaint.upvotes += 1;
+    complaint.upvotedBy.push(req.user.id);
+
+    await complaint.save();
+
+    return res.json({ upvotes: complaint.upvotes });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// 🔥 CATEGORY COUNT ROUTE
+router.get("/category/count", auth, async (req, res) => {
+  try {
+    const result = await Complaint.aggregate([
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// DELETE
 router.delete("/:id", auth, requireRole("admin"), async (req, res) => {
   try {
     const complaint = await Complaint.findByIdAndDelete(req.params.id);

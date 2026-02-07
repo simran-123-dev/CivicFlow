@@ -12,6 +12,7 @@ import AdminComplaintDetail from "./pages/AdminComplaintDetail";
 import ComplaintDetail from "./pages/ComplaintDetail";
 import Login from "./pages/Login";
 
+
 function App() {
   return (
     <div>
@@ -38,6 +39,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/admin/complaints/:id"
           element={

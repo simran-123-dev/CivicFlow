@@ -23,6 +23,10 @@ const complaintSchema = new mongoose.Schema(
     remarks: { type: String, default: "" },
     proofName: { type: String, default: "" },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+    // 🔥 NEW FIELDS FOR UPVOTE SYSTEM
+    upvotes: { type: Number, default: 0 },
+    upvotedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
